@@ -1,0 +1,266 @@
+import pygame
+import random
+import sys
+import time
+import pickle
+from pygame.locals import *
+
+pygame.init()
+
+#defining colours
+BLACK =     (0,     0,      0)
+WHITE =     (255,   255,    255)
+AQUA =      (144,   212,    189)
+RED =       (255,   0,      0)
+YELLOW =    (255,   255,    0)
+GREEN =     (0,     255,    0)
+BLUE =      (0,     0,      255)
+
+#setting the score to 0
+playerScore = 0
+
+#text
+font = pygame.font.SysFont("Comic Sans MS", 30, False, False)
+
+#used to manage how fast the screen updates
+clock = pygame.time.Clock()
+
+#Setting window title
+pygame.display.set_caption("Testing")
+
+width = 700
+height = 500
+
+#Opening and setting window size
+display = pygame.display.set_mode((width, height))
+display_rect = display.get_rect()
+
+#creating item class for collectibles
+class Collectible(pygame.sprite.Sprite):
+    def __init__(self, color, width, height):
+        super().__init__()
+        #allows the sub-classes to be filled with any colour
+        self.image = pygame.Surface([width, height])
+        self.image.fill(color)
+        self.rect = self.image.get_rect()
+    def reset_pos(self):
+        self.rect.y = random.randrange(-300, -20)
+        self.rect.x = random.randrange(0, width)
+    def update(self):
+        # Move block down one pixel
+        self.rect.y += 1
+        # If block is too far down, reset to top of screen.
+        if self.rect.y > 450:
+            self.reset_pos()
+
+#creating item class for player
+class Player(pygame.sprite.Sprite):
+    def __init__(self, color, width, height):
+        super().__init__()
+        #allows the sub-classes to be filled with any colour
+        self.image = pygame.Surface([width, height])
+        self.image.fill(color)
+        self.rect = self.image.get_rect()
+    #adding movement
+    def moveRight(self, pixels):
+        self.rect.x += pixels
+    def moveLeft(self, pixels):
+        self.rect.x -= pixels
+    def moveUp(self, pixels):
+        self.rect.y -= pixels
+    def moveDown(self, pixels):
+        self.rect.y += pixels
+        
+#creates a list of all sprites created
+allSpritesList = pygame.sprite.Group()
+collectibleList = pygame.sprite.Group()
+redList = pygame.sprite.Group()
+greenList = pygame.sprite.Group()
+yellowList = pygame.sprite.Group()
+blueList = pygame.sprite.Group()
+
+#creates the player
+playerSprite = Player(BLACK, 50, 50)
+playerSprite.rect.x = 325
+playerSprite.rect.y = 380
+allSpritesList.add(playerSprite)
+
+for i in range(10):
+    # This represents a block
+    collectibleRed = Collectible(RED, 30, 30)
+    # Set a random location for the block
+    collectibleRed.rect.x = random.randrange(width)
+    collectibleRed.rect.y = random.randrange(height)
+    # Add the block to the list of objects
+    collectibleList.add(collectibleRed)
+    allSpritesList.add(collectibleRed)
+    redList.add(collectibleRed)
+
+for i in range(1):
+    # This represents a block
+    collectibleBlue = Collectible(BLUE, 30, 30)
+    # Set a random location for the block
+    collectibleBlue.rect.x = random.randrange(width)
+    collectibleBlue.rect.y = random.randrange(height)
+    # Add the block to the list of objects
+    collectibleList.add(collectibleBlue)
+    allSpritesList.add(collectibleBlue)
+    blueList.add(collectibleBlue)
+
+for i in range(20):
+    # This represents a block
+    collectibleYellow = Collectible(YELLOW, 30, 30)
+    # Set a random location for the block
+    collectibleYellow.rect.x = random.randrange(width)
+    collectibleYellow.rect.y = random.randrange(height)
+    # Add the block to the list of objects
+    collectibleList.add(collectibleYellow)
+    allSpritesList.add(collectibleYellow)
+    yellowList.add(collectibleYellow)
+
+for i in range(7):
+    # This represents a block
+    collectibleGreen = Collectible(GREEN, 30, 30)
+    # Set a random location for the block
+    collectibleGreen.rect.x = random.randrange(width)
+    collectibleGreen.rect.y = random.randrange(height)
+    # Add the block to the list of objects
+    collectibleList.add(collectibleGreen)
+    allSpritesList.add(collectibleGreen)
+    greenList.add(collectibleGreen)
+
+movedict = {'up':False, 'down':False, 'left':False, 'right':False}
+
+now = time.time()
+future = now + 30
+while time.time() < future:
+        print ("The time is " +str(now))
+        for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                                pygame.quit()
+                                sys.exit()
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    playerScore = playerScore + 1
+                    print (str(playerScore))
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_a]:
+            playerSprite.moveLeft(5)
+        if keys[pygame.K_d]:
+            playerSprite.moveRight(5)
+        if keys[pygame.K_w]:
+            playerSprite.moveUp(5)
+        if keys[pygame.K_s]:
+            playerSprite.moveDown(5)
+            
+        playerSprite.rect.clamp_ip(display_rect)
+
+        
+
+        #text
+        textPlayerScore = font.render("Score: " +str(playerScore), True, WHITE)
+        #textTimer = font.render("Time: " +str(timeSecs), True, WHITE)
+
+        display.fill(WHITE)
+
+        #player
+        pygame.draw.rect(display, BLACK, playerSprite)
+
+        # Calls update() method on every sprite in the list
+        allSpritesList.update()
+
+        redBlocksHitList = pygame.sprite.spritecollide(playerSprite, redList, False)
+        for block in redBlocksHitList:
+            playerScore -=20
+            if playerScore <0:
+                playerScore = 0
+            print(playerScore)
+            # Reset block to the top of the screen to fall again.
+            block.reset_pos()
+
+        greenBlocksHitList = pygame.sprite.spritecollide(playerSprite, greenList, False)
+        for block in greenBlocksHitList:
+            playerScore +=20
+            if playerScore <0:
+                playerScore = 0
+            print(playerScore)
+            block.reset_pos()
+
+        yellowBlocksHitList = pygame.sprite.spritecollide(playerSprite, yellowList, False)
+        for block in yellowBlocksHitList:
+            playerScore -=5
+            if playerScore <0:
+                playerScore = 0
+            print(playerScore)
+            block.reset_pos()
+
+        blueBlocksHitList = pygame.sprite.spritecollide(playerSprite, blueList, False)
+        for block in blueBlocksHitList:
+            playerScore *=2
+            if playerScore <0:
+                playerScore = 0
+            print(playerScore)
+            block.reset_pos()
+            
+
+        # Draw all the spites
+        allSpritesList.draw(display)
+        
+        #menu button positions
+        pygame.draw.rect(display, BLACK, (0, 0, 700, 50))
+        pygame.draw.rect(display, BLACK, (0, 450, 700, 50))
+        #menu button dividers
+        pygame.draw.line(display, AQUA, [350, 0], [350, 50], 1)
+        pygame.draw.line(display, AQUA, [200, 450], [200, 500], 1)
+        pygame.draw.line(display, AQUA, [500, 450], [500, 500], 1)
+        #Text
+        display.blit(textPlayerScore, [525, 460])
+        #display.blit(textTimer, [200, 460])
+
+        pygame.display.update()
+        clock.tick(60)
+        
+print ("Final score: " +str(playerScore))
+
+tempScores = pickle.load(open("scoreSave.p", "rb"))
+playerName = input (print("Enter your name: "))
+
+print ("Original list: ")
+print (tempScores)
+
+tempScores.append ([int(playerScore), playerName])
+print ("Updated list: ")
+print (tempScores)
+
+def bubbleSort(listToSort):
+    scoresLength = len(listToSort)-1
+    listSorted = False
+    while listSorted == False:
+        listSorted = True
+        for i in range (scoresLength):
+            if listToSort[i] < listToSort[i+1]:
+                listSorted = False
+                tempScore = listToSort[i+1]
+                listToSort[i+1] = listToSort[i]
+                listToSort[i] = tempScore
+
+bubbleSort(tempScores)
+
+print ("Sorted list: ")
+print (tempScores)
+
+#checks if there are 10 items in the list, and removes the smallest one
+def inList10(listToCheck):
+    listToCheck.pop(10)
+
+inList10(tempScores)
+print("The remaining 10 items in the list")
+print (tempScores)
+
+pickle.dump(tempScores, open("scoreSave.p", "wb"))
+print ("Written to file :)")
+
+
+scoresToPrint = pickle.load(open("scoreSave.p", "rb"))
+
+print (scoresToPrint)
+
